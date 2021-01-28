@@ -1,8 +1,10 @@
 #pragma once
 #include "fingerprint.h"
 #include "Keyboard.h"
+#include "EEPROM.h"
 
 #define MAX_FINGERS 20
+#define MAX_PASSWORD_LENGTH 40
 
 enum FbStatus
 {
@@ -25,17 +27,21 @@ public:
 	bool AddFinger(unsigned int id);
 	void DeleteAllFingers();
 
-	void InputPassword(String pswd);
+	void InputPassword(int fingerid);
 	void TypeString(String s, bool enter);
 	void PressKey(uint8_t k);
 	void ReleaseAll();
+	
+	void saveConfig();
+	void loadConfig();
+	void clearConfig();
 
 private:
 	Serial_* debug = NULL;
 	HardwareSerial* sensorSerial = NULL;
 	Fingerprint sensor = NULL;
 
-	char comdata[256], data_p; //´®¿Ú»º´æÊı¾İ
+	char comdata[256], data_p; //ä¸²å£ç¼“å­˜æ•°æ®
 	long time;
 	long INTERVAL = 200; //ms
 
@@ -45,17 +51,17 @@ private:
 
 	volatile unsigned char FPMXX_RECEIVE_BUFFER[64];
 
-	unsigned char FPMXX_Pack_Head[6] = { 0xEF, 0x01, 0xFF, 0xFF, 0xFF, 0xFF }; //Ğ­Òé°üÍ·
-	unsigned char FPMXX_Get_Img[6] = { 0x01, 0x00, 0x03, 0x01, 0x0, 0x05 }; //»ñµÃÖ¸ÎÆÍ¼Ïñ
-	unsigned char FPMXX_Save_Finger[9] = { 0x01, 0x00, 0x06, 0x06, 0x01, 0x00, 0x0B, 0x00, 0x19 }; //½«BUFFER1ÖĞµÄÌØÕ÷Âë´æ·Åµ½Ö¸¶¨µÄÎ»ÖÃ
-	unsigned char FPMXX_Search[11] = { 0x01, 0x0, 0x08, 0x04, 0x01, 0x0, 0x0, 0x03, 0xE7, 0x0, 0xF8 }; //ËÑË÷Ö¸ÎÆËÑË÷·¶Î§0 - 999,Ê¹ÓÃBUFFER1ÖĞµÄÌØÕ÷ÂëËÑË÷
+	unsigned char FPMXX_Pack_Head[6] = { 0xEF, 0x01, 0xFF, 0xFF, 0xFF, 0xFF }; //åè®®åŒ…å¤´
+	unsigned char FPMXX_Get_Img[6] = { 0x01, 0x00, 0x03, 0x01, 0x0, 0x05 }; //è·å¾—æŒ‡çº¹å›¾åƒ
+	unsigned char FPMXX_Save_Finger[9] = { 0x01, 0x00, 0x06, 0x06, 0x01, 0x00, 0x0B, 0x00, 0x19 }; //å°†BUFFER1ä¸­çš„ç‰¹å¾ç å­˜æ”¾åˆ°æŒ‡å®šçš„ä½ç½®
+	unsigned char FPMXX_Search[11] = { 0x01, 0x0, 0x08, 0x04, 0x01, 0x0, 0x0, 0x03, 0xE7, 0x0, 0xF8 }; //æœç´¢æŒ‡çº¹æœç´¢èŒƒå›´0 - 999,ä½¿ç”¨BUFFER1ä¸­çš„ç‰¹å¾ç æœç´¢
 	unsigned char FPMXX_Get_Device[6] = { 0x01, 0x00, 0x03, 0x16, 0x00, 0x1A };
-	unsigned char FPMXX_Get_Templete_Count[6] = { 0x01, 0x00, 0x03, 0x1D, 0x00, 0x21 }; //»ñµÃÄ£°æ×ÜÊı
-	unsigned char FPMXX_Img_To_Buffer1[7] = { 0x01, 0x0, 0x04, 0x02, 0x01, 0x0, 0x08 }; //½«Í¼Ïñ·ÅÈëµ½BUFFER1
-	unsigned char FPMXX_Img_To_Buffer2[7] = { 0x01, 0x0, 0x04, 0x02, 0x02, 0x0, 0x09 }; //½«Í¼Ïñ·ÅÈëµ½BUFFER2
-	unsigned char FPMXX_Reg_Model[6] = { 0x01, 0x0, 0x03, 0x05, 0x0, 0x09 }; //½«BUFFER1¸úBUFFER2ºÏ³ÉÌØÕ÷Ä£°æ
-	unsigned char FPMXX_Delete_All_Model[6] = { 0x01, 0x0, 0x03, 0x0d, 0x00, 0x11 }; //É¾³ıÖ¸ÎÆÄ£¿éÀïËùÓĞµÄÄ£°æ
-
+	unsigned char FPMXX_Get_Templete_Count[6] = { 0x01, 0x00, 0x03, 0x1D, 0x00, 0x21 }; //è·å¾—æ¨¡ç‰ˆæ€»æ•°
+	unsigned char FPMXX_Img_To_Buffer1[7] = { 0x01, 0x0, 0x04, 0x02, 0x01, 0x0, 0x08 }; //å°†å›¾åƒæ”¾å…¥åˆ°BUFFER1
+	unsigned char FPMXX_Img_To_Buffer2[7] = { 0x01, 0x0, 0x04, 0x02, 0x02, 0x0, 0x09 }; //å°†å›¾åƒæ”¾å…¥åˆ°BUFFER2
+	unsigned char FPMXX_Reg_Model[6] = { 0x01, 0x0, 0x03, 0x05, 0x0, 0x09 }; //å°†BUFFER1è·ŸBUFFER2åˆæˆç‰¹å¾æ¨¡ç‰ˆ
+	unsigned char FPMXX_Delete_All_Model[6] = { 0x01, 0x0, 0x03, 0x0d, 0x00, 0x11 }; //åˆ é™¤æŒ‡çº¹æ¨¡å—é‡Œæ‰€æœ‰çš„æ¨¡ç‰ˆ
+	unsigned char FPMXX_List_Library[7] = { 0x01, 0x0, 0x04, 0x1f, 0x00, 0x00, 0x24 }; //ç¥ç§˜æ¥å£
 
 	void FPMXX_Cmd_Save_Finger(unsigned int storeID);
 	void FPMXX_Send_Cmd(unsigned char length, unsigned char* address, unsigned char returnLength);
@@ -63,4 +69,5 @@ private:
 	void FPMXX_Cmd_StoreTemplate(unsigned int ID);
 	bool FPMXX_Add_Fingerprint(unsigned int  writeID);
 	void FPMXX_Delete_All_Fingerprint();
+	int FPMXX_Get_Free_Position();
 };

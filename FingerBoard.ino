@@ -31,6 +31,8 @@ void setup()
   {
     Serial.println("Did not find fingerprint sensor :(");
   }
+
+  fingerBoard.loadConfig();
 }
 
 void loop()
@@ -50,19 +52,9 @@ void loop()
   
   int id = fingerBoard.GetFingerID();
 
-  switch (id)
+  if(id != -1)
   {
-  case 1: case 2: case 3:
-    fingerBoard.InputPassword("12345678");
-    break;
-
-  case 4: case 5: case 6:
-    fingerBoard.InputPassword("123456789");
-    break;
-
-  case 7: case 8: case 9:
-    fingerBoard.InputPassword("aaabbbccc");
-    break;
+    fingerBoard.InputPassword(id);
 
     /* 
 

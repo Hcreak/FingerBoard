@@ -92,10 +92,13 @@ bool FingerBoard::CmdCheck()
 				pswd = String(strtok(NULL, ";"));
 				passwords[p] = pswd;
 
-				Serial.print("Set finger [");
+				Serial.print("Set NO.");
 				Serial.print(p);
-				Serial.print("]'s password to ");
-				Serial.println(pswd);
+				Serial.print(" Password to [");
+				Serial.print(pswd);
+				Serial.println("]");
+
+				saveConfig();
 
 				break;
 
@@ -103,7 +106,33 @@ bool FingerBoard::CmdCheck()
 				DeleteAllFingers();
 				Serial.println("All Finger deleted !");
 
+				for(int i = 0; i < MAX_FINGERS; i++)
+				{
+					passwords[i] = "";
+				}
+				clearConfig();
+				Serial.println("All Password deleted !");
+
 				break;
+
+			case 'T':
+				// sensor.getTemplateCount();
+				// Serial.print("T_number:  ");
+				// Serial.println(sensor.templateCount);
+	
+				Serial.print("password_0:  ");
+				Serial.println(passwords[0]);
+				// loadConfig();
+
+				// Serial.print("EEPROM_0:  ");
+				// Serial.println(EEPROM.read(0));
+
+				break;
+
+			case 'F':
+				Serial.print("free:  ");
+				Serial.println(FPMXX_Get_Free_Position());
+
 			}
 		}
 		else
@@ -238,11 +267,11 @@ void FingerBoard::DeleteAllFingers()
 	FPMXX_Delete_All_Fingerprint();
 }
 
-void FingerBoard::InputPassword(String pswd)
+void FingerBoard::InputPassword(int fingerid)
 {
 	if (!isTouching)
 	{
-		Keyboard.println(pswd);
+		Keyboard.println(passwords[fingerid]);
 		Keyboard.write(176); //ENTER
 
 		isTouching = true;
@@ -277,10 +306,10 @@ void FingerBoard::FPMXX_Cmd_Save_Finger(unsigned int storeID)
 	FPMXX_Save_Finger[5] = (storeID & 0xFF00) >> 8;
 	FPMXX_Save_Finger[6] = (storeID & 0x00FF);
 
-	for (i = 0; i < 7; i++) //¼ÆËãĞ£ÑéºÍ
+	for (i = 0; i < 7; i++) //è®¡ç®—æ ¡éªŒå’Œ
 		temp = temp + FPMXX_Save_Finger[i];
 
-	FPMXX_Save_Finger[7] = (temp & 0x00FF00) >> 8; //´æ·ÅĞ£ÑéÊı¾İ
+	FPMXX_Save_Finger[7] = (temp & 0x00FF00) >> 8; //å­˜æ”¾æ ¡éªŒæ•°æ®
 	FPMXX_Save_Finger[8] = temp & 0x0000FF;
 
 	FPMXX_Send_Cmd(9, FPMXX_Save_Finger, 12);
@@ -292,7 +321,7 @@ void FingerBoard::FPMXX_Send_Cmd(unsigned char length, unsigned char* address, u
 
 	sensorSerial->flush();
 
-	for (i = 0; i < 6; i++) //°üÍ·
+	for (i = 0; i < 6; i++) //åŒ…å¤´
 	{
 		sensorSerial->write(FPMXX_Pack_Head[i]);
 	}
@@ -330,10 +359,10 @@ void FingerBoard::FPMXX_Cmd_StoreTemplate(unsigned int ID)
 	FPMXX_Save_Finger[5] = (ID & 0xFF00) >> 8;
 	FPMXX_Save_Finger[6] = (ID & 0x00FF);
 
-	for (int i = 0; i < 7; i++) //¼ÆËãĞ£ÑéºÍ
+	for (int i = 0; i < 7; i++) //è®¡ç®—æ ¡éªŒå’Œ
 		temp = temp + FPMXX_Save_Finger[i];
 
-	FPMXX_Save_Finger[7] = (temp & 0x00FF00) >> 8; //´æ·ÅĞ£ÑéÊı¾İ
+	FPMXX_Save_Finger[7] = (temp & 0x00FF00) >> 8; //å­˜æ”¾æ ¡éªŒæ•°æ®
 	FPMXX_Save_Finger[8] = temp & 0x0000FF;
 
 	sensorSerial->write((char*)FPMXX_Pack_Head, 6);
@@ -346,21 +375,21 @@ bool FingerBoard::FPMXX_Add_Fingerprint(unsigned int  writeID)
 {
 	FPMXX_Send_Cmd(6, FPMXX_Get_Img, 12);
 
-	//ÅĞ¶Ï½ÓÊÕµ½µÄÈ·ÈÏÂë,µÈÓÚ0Ö¸ÎÆ»ñÈ¡³É¹¦    
+	//åˆ¤æ–­æ¥æ”¶åˆ°çš„ç¡®è®¤ç ,ç­‰äº0æŒ‡çº¹è·å–æˆåŠŸ    
 	if (FPMXX_RECEIVE_BUFFER[9] == 0)
 	{
 		delay(100);
-		FPMXX_Send_Cmd(7, FPMXX_Img_To_Buffer1, 12); //·¢ËÍÃüÁî ½«Í¼Ïñ×ª»»³É ÌØÕ÷Âë ´æ·ÅÔÚ CHAR_buffer1
+		FPMXX_Send_Cmd(7, FPMXX_Img_To_Buffer1, 12); //å‘é€å‘½ä»¤ å°†å›¾åƒè½¬æ¢æˆ ç‰¹å¾ç  å­˜æ”¾åœ¨ CHAR_buffer1
 
 		while (1)
 		{
 			FPMXX_Send_Cmd(6, FPMXX_Get_Img, 12);
 
-			//ÅĞ¶Ï½ÓÊÕµ½µÄÈ·ÈÏÂë,µÈÓÚ0Ö¸ÎÆ»ñÈ¡³É¹¦   
+			//åˆ¤æ–­æ¥æ”¶åˆ°çš„ç¡®è®¤ç ,ç­‰äº0æŒ‡çº¹è·å–æˆåŠŸ   
 			if (FPMXX_RECEIVE_BUFFER[9] == 0)
 			{
 				delay(500);
-				FPMXX_Send_Cmd(7, FPMXX_Img_To_Buffer2, 12); //·¢ËÍÃüÁî ½«Í¼Ïñ×ª»»³É ÌØÕ÷Âë ´æ·ÅÔÚ CHAR_buffer1
+				FPMXX_Send_Cmd(7, FPMXX_Img_To_Buffer2, 12); //å‘é€å‘½ä»¤ å°†å›¾åƒè½¬æ¢æˆ ç‰¹å¾ç  å­˜æ”¾åœ¨ CHAR_buffer1
 				FPMXX_Cmd_StoreTemplate(writeID);
 
 				return true;
@@ -375,8 +404,110 @@ bool FingerBoard::FPMXX_Add_Fingerprint(unsigned int  writeID)
 
 void FingerBoard::FPMXX_Delete_All_Fingerprint()
 {
-	//Ìí¼ÓÇå¿ÕÖ¸ÎÆÖ¸Áî
-	FPMXX_Send_Cmd(6, FPMXX_Delete_All_Model, 12); //·¢ËÍÃüÁî ½«Í¼Ïñ×ª»»³É ÌØÕ÷Âë ´æ·ÅÔÚ CHAR_buffer1
+	//æ·»åŠ æ¸…ç©ºæŒ‡çº¹æŒ‡ä»¤
+	FPMXX_Send_Cmd(6, FPMXX_Delete_All_Model, 12); //å‘é€å‘½ä»¤ å°†å›¾åƒè½¬æ¢æˆ ç‰¹å¾ç  å­˜æ”¾åœ¨ CHAR_buffer1
 
 	delay(2000);
+}
+
+int FingerBoard::FPMXX_Get_Free_Position() //ä¸åšå­—å…¸æš‚æ—¶ç”¨ä¸åˆ°
+{
+	FPMXX_Send_Cmd(7, FPMXX_List_Library, 44); //åˆ—å‡ºæŒ‡çº¹åº“å ç”¨æƒ…å†µ
+
+	int i,x;
+
+	for(i = 0; i < MAX_FINGERS/8; i++) //æ•°é‡åˆ¤æ–­æœ‰é—®é¢˜
+	{
+		byte byte_block = FPMXX_RECEIVE_BUFFER[10+i];
+		for(x = 0; x < 8; x++)
+		{
+			if(bitRead(byte_block,x) == 0)
+			{
+				int position = (i*8)+x;
+				return position;
+			}
+		}
+	}
+
+	return -1;
+	// ç¼ºå°‘è¶…å‡ºåº“å®¹åˆ¤æ–­
+}
+
+// ä¿å­˜å‚æ•°åˆ°EEPROM
+void FingerBoard::saveConfig()
+{
+	clearConfig();
+	
+	// char config[MAX_FINGERS][MAX_PASSWORD_LENGTH];
+	// for(int i = 0; i < MAX_FINGERS; i++)
+	// {
+	// 	strcpy(config[i], passwords[i].c_str());
+	// }
+
+	// uint8_t *p = (uint8_t*)(&config);
+	// for(int i = 0; i < sizeof(config); i++)
+	// {
+	// 	EEPROM.write(i, *(p + i));
+	// }
+
+	int addrOffset = 0;
+
+	for(int i = 0; i < MAX_FINGERS; i++)
+	{
+		String strToWrite = passwords[i];
+		byte len = strToWrite.length();
+		EEPROM.write(addrOffset, len);
+		for (int x = 0; x < len; x++)
+		{
+			EEPROM.write(addrOffset + 1 + x, strToWrite[x]);
+		}
+		addrOffset = addrOffset + 1 + len;
+	}
+}
+
+// ä»EEPROMåŠ è½½å‚æ•°
+void FingerBoard::loadConfig()
+{
+	// char config[MAX_FINGERS][MAX_PASSWORD_LENGTH];
+	// uint8_t *p = (uint8_t*)(&config);
+	// for(int i = 0; i < sizeof(config); i++)
+	// {
+	// 	*(p + i) = EEPROM.read(i);
+	// 	// Serial.println(*(p + i));
+	// }
+
+	// for(int i = 0; i < MAX_FINGERS; i++)
+	// {	
+	// 	config[i][MAX_PASSWORD_LENGTH-1] = '\0';
+	// 	passwords[i] = String(config[i]);
+	// 	Serial.println(passwords[i]);
+	// 	// for(int x = 0; x < MAX_PASSWORD_LENGTH; x++)
+	// 	// {
+	// 	// 	passwords[i] = config[i];
+	// 	// }
+	// }
+
+	int addrOffset = 0;
+
+	for(int i = 0; i < MAX_FINGERS; i++)
+	{
+		int newStrLen = EEPROM.read(addrOffset);
+		char data[newStrLen + 1];
+		for (int x = 0; x < newStrLen; x++)
+		{
+			data[x] = EEPROM.read(addrOffset + 1 + x);
+		}
+		data[newStrLen] = '\0'; // the character may appear in a weird way, you should read: 'only one backslash and 0'
+		passwords[i] = String(data);
+		addrOffset = addrOffset + 1 + newStrLen;
+	}
+}
+
+// æ¸…ç©ºEEPROM
+void FingerBoard::clearConfig()
+{
+	for(int i = 0 ; i < EEPROM.length() ; i++) 
+	{
+    	EEPROM.write(i, 0);
+  	}
 }
