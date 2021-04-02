@@ -85,7 +85,7 @@ bool FingerBoard::CmdCheck()
 
 				break;
 
-			case 'P': // not used 
+			case 'P': // 2021.1 by Hcreak
 				strtok(comdata, ",");
 				p = atoi(strtok(NULL, ","));
 

@@ -1,5 +1,32 @@
 # FingerBoard
 
+## Changes
+
+ * 可用命令行设置密码（与指纹1对1） 数据保存在EEPROM中 上电读取
+ * 使用 UTF-8 编码
+ * 抓包获得神秘接口[Get_Free_Position](https://github.com/Hcreak/FingerBoard/blob/fd340ab99904085fc42d6c9bfcdca59eccf24364/fingerprintWrapper.cpp#L413) 可得到特征库空缺位置 （暂时未使用）
+
+## Useage
+
+ * 串口默认比特率 `115200`
+
+### 添加指纹
+
+    命令： A,<id>
+    参数： id 指纹索引ID
+
+### 设置密码
+
+    命令： P,<id>,<password>;
+    参数： id 指纹索引ID
+          password 密码明文 因为是以 ; 判断结束 所以不能包含 ;
+
+### 清空指纹和密码
+
+    命令： D
+
+---
+# README by peng-zhihui
 ### 给机械键盘添加指纹识别功能，这是Arduino固件的代码，详细项目介绍请看这篇文章:
 
 [如何制作一个带指纹识别的机械键盘 - 稚晖的文章 - 知乎](https://zhuanlan.zhihu.com/p/64809151)
